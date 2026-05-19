@@ -1,0 +1,151 @@
+import type { Deal, Message } from '@/types'
+
+export const deals: Deal[] = [
+  {
+    id: 'nova-skin',
+    brand: 'NovaSkin Co',
+    category: 'Skincare',
+    status: 'negotiating',
+    offeredRate: 300,
+    deliverables: ['1 feed post', '2 stories'],
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 'glow-lab',
+    brand: 'GlowLab Skincare',
+    category: 'Skincare',
+    status: 'new',
+    offeredRate: 300,
+    deliverables: ['1 feed post', '2 stories'],
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'tech-pulse',
+    brand: 'TechPulse Gear',
+    category: 'Tech',
+    status: 'new',
+    offeredRate: 1100,
+    deliverables: ['1 dedicated reel'],
+    createdAt: new Date(Date.now() - 18000000).toISOString(),
+  },
+  {
+    id: 'urban-vogue',
+    brand: 'UrbanVogue Apparel',
+    category: 'Fashion',
+    status: 'negotiating',
+    offeredRate: 850,
+    deliverables: ['1 reel', '3 stories', '1 feed post'],
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: 'halo-wear',
+    brand: 'HaloWear',
+    category: 'Fashion',
+    status: 'new',
+    offeredRate: 600,
+    deliverables: ['2 feed posts'],
+    createdAt: new Date(Date.now() - 43200000).toISOString(),
+  },
+  {
+    id: 'tech-gear-pro',
+    brand: 'TechGear Pro',
+    category: 'Tech',
+    status: 'closed',
+    offeredRate: 1200,
+    settledRate: 1200,
+    deliverables: ['1 dedicated video'],
+    createdAt: new Date(Date.now() - 2592000000).toISOString(),
+  },
+  {
+    id: 'nutri-boost',
+    brand: 'NutriBoost',
+    category: 'Wellness',
+    status: 'closed',
+    offeredRate: 500,
+    settledRate: 650,
+    deliverables: ['1 feed post', '3 stories'],
+    createdAt: new Date(Date.now() - 5184000000).toISOString(),
+  },
+  {
+    id: 'glow-path',
+    brand: 'GlowPath Organics',
+    category: 'Skincare',
+    status: 'rejected',
+    offeredRate: 500,
+    deliverables: ['2 reels'],
+    createdAt: new Date(Date.now() - 7776000000).toISOString(),
+  },
+  {
+    id: 'luxe-beauty',
+    brand: 'Luxe Beauty',
+    category: 'Skincare',
+    status: 'closed',
+    offeredRate: 400,
+    settledRate: 800,
+    deliverables: ['1 reel', '2 stories'],
+    createdAt: new Date(Date.now() - 10368000000).toISOString(),
+  },
+]
+
+export const threads: Record<string, Message[]> = {
+  'nova-skin': [
+    {
+      id: '1',
+      from: 'brand',
+      text: "Hey Maya! Love your skincare content. We're NovaSkin — could you do 1 post + 2 stories for $300?",
+      timestamp: new Date(Date.now() - 90000000).toISOString(),
+    },
+    {
+      id: '2',
+      from: 'agent',
+      text: "Thanks for reaching out! My rate for 1 feed post + 2 stories is $750, with a 2-revision limit and NET-30 payment terms. Let me know if that works!",
+      routeLabel: 'Groq classify → Claude draft',
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      id: '3',
+      from: 'brand',
+      text: "We came back with $500 — can we make that work?",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+    },
+  ],
+  'glow-lab': [
+    {
+      id: '1',
+      from: 'brand',
+      text: "Hi Maya! We're GlowLab Skincare — reaching out about a collab. We'd love 1 feed post + 2 stories for our new Vitamin C serum. We usually budget around $300. Interested?",
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+    },
+  ],
+  'tech-pulse': [
+    {
+      id: '1',
+      from: 'brand',
+      text: "Hey Maya! TechPulse here. We loved your last tech review. Interested in a dedicated unboxing reel for our new earbuds? We're thinking $1,100 all-in.",
+      timestamp: new Date(Date.now() - 18000000).toISOString(),
+    },
+  ],
+  'urban-vogue': [
+    {
+      id: '1',
+      from: 'brand',
+      text: "Hi! UrbanVogue here. We'd love to partner on our fall collection launch. 1 reel + 3 stories + 1 feed post. Budget is $850.",
+      timestamp: new Date(Date.now() - 172800000).toISOString(),
+    },
+    {
+      id: '2',
+      from: 'agent',
+      text: "Thanks for the opportunity! For this package, my rate is $1,400 with 3 revision rounds, NET-30 payment, and 6-month usage rights. Would that work?",
+      routeLabel: 'Groq classify → Claude draft',
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+    },
+  ],
+  'halo-wear': [
+    {
+      id: '1',
+      from: 'brand',
+      text: "Hey! HaloWear here. Love your fashion aesthetic. Could you do 2 feed posts for $600?",
+      timestamp: new Date(Date.now() - 43200000).toISOString(),
+    },
+  ],
+}
