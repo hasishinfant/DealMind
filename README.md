@@ -2,6 +2,8 @@
 
 ### AI negotiation intelligence for creators.
 
+🚀 Live Demo: https://deal-mind-rho.vercel.app/
+
 Creators lose thousands in brand deals — not because they lack talent, but because they negotiate blindly.
 
 Brands lowball.
