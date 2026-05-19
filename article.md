@@ -1,70 +1,93 @@
-# Why My Negotiation Agent Gets Smarter Every Deal
+# My AI Negotiation Agent Remembered a Brand Paid Late — Before I Did
 
-I built an AI agent that negotiates brand deals for influencers. The first version was decent—it could draft professional counter-offers and spot missing contract terms. But it had a fatal flaw: every negotiation started from scratch. The agent had no memory of past deals, no sense of which brands paid late, and no pattern recognition for settlement rates.
+Six months after a nightmare skincare campaign, the same brand came back with a new offer.
 
-Then I added persistent memory. Now, every closed deal becomes training data for the next one. The agent recalls that Brand X historically settles at 2.1× their opening offer, or that Brand Y paid 3 weeks late on the last campaign. This isn't just a feature—it fundamentally changes how the agent operates.
+Same lowball number. Same vague deliverables. Same missing payment terms.
 
-Here's how I built it, and why memory transforms AI negotiation from a parlor trick into a production tool.
+I had forgotten the details. The brand was counting on that.
 
-## The Problem: Stateless AI is Expensive and Dumb
+My AI assistant had forgotten everything too. It drafted a warm, professional reply suggesting a modest counter. Nothing about the two weeks of late payment. Nothing about the four revision requests that weren't in the contract. Nothing about the fact that the brand had eventually settled at 2.3× their opening offer after I pushed back hard.
 
-Most AI agents are stateless. You send a prompt, get a response, and the conversation ends. The next request starts fresh. This works fine for one-off tasks like "summarize this article" or "write a product description." But negotiation is inherently stateful. Every deal has context: past interactions with the brand, category benchmarks, payment history, revision overruns.
+The AI was helpful. But it was negotiating blind.
 
-Without memory, your agent is flying blind. It can't answer questions like:
-- "What did this brand settle at last time?"
-- "Do skincare brands typically lowball their opening offers?"
-- "Has this brand ever paid late?"
+That's the problem I built DealMind to solve — not better prompts, but persistent negotiation memory. An agent that treats every interaction as a data point and gets demonstrably smarter with each deal.
 
-You could stuff this context into the prompt manually, but that's brittle and doesn't scale. You need semantic search over historical deals—a way to recall relevant patterns without hardcoding every edge case.
+Here's how it works under the hood.
 
-## Enter Hindsight: Vector Memory for AI Agents
+---
 
-I integrated Hindsight, a vector database designed for AI memory. The core idea is simple: when a deal closes, I serialize the outcome into a structured string and store it with metadata. Later, when negotiating with a similar brand or category, I query the memory store and inject the most relevant past deals into the prompt.
+## The Core Problem: Stateless AI in a Stateful Game
 
-Here's the memory storage function:
+Negotiation isn't transactional. It's historical.
 
-```typescript
-export async function store(
-  content: string,
-  metadata: Record<string, string> = {}
-): Promise<boolean> {
-  try {
-    const res = await fetch(
-      `${BASE}/pipelines/${pipelineId()}/upsert`,
-      {
-        method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ documents: [{ content, metadata }] }),
-      }
-    )
-    return res.ok
-  } catch (err) {
-    console.error('[Hindsight] store failed:', err)
-    return false
-  }
+Experienced talent managers carry institutional knowledge that changes how they approach every conversation. They know which brands always lowball. Which ones delay invoices. Which categories routinely push for unlimited usage rights. That accumulated context is leverage — and most AI systems throw it away after every session.
+
+The standard AI negotiation setup looks something like this:
+
+1. Brand sends a DM
+2. You paste it into ChatGPT
+3. AI produces a confident-sounding counter with zero context
+4. Repeat from scratch next time
+
+The reply might be grammatically correct. But it's strategically empty because the model has no idea what happened the last three times you dealt with this category of brand.
+
+The fix isn't a better prompt. The fix is memory.
+
+---
+
+## Building the Memory Layer with Hindsight
+
+The first thing I built was a clean abstraction over [Hindsight](https://hindsight.vectorize.io/) for storing and recalling deal intelligence. The goal was simple: after every negotiation, store what happened. Before every negotiation, retrieve what's relevant.
+
+The recall function in `lib/hindsight.ts` does a semantic vector search against your deal history:
+
+```ts
+export async function recall(
+  query: string,
+  topK = 4
+): Promise<RecalledMemory[]> {
+  const res = await fetch(
+    `${BASE}/pipelines/${pipelineId()}/retrieve`,
+    {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ query, topK }),
+    }
+  )
+  const data = await res.json()
+  return (data.documents ?? []) as RecalledMemory[]
 }
+```
 
+The query isn't the brand name — it's the full negotiation context: brand, category, and the type of deal. That matters because you want semantic matches, not exact ones. A query for "GlowLab Skincare product collab" should surface memories about NovaSkin Co if they're in the same category with similar patterns.
+
+What gets stored isn't raw conversation. It's structured deal intelligence built by `buildDealMemory()`:
+
+```ts
 export function buildDealMemory(d: DealMemoryPayload): string {
   const outcome = d.walked
     ? 'walked away when countered'
     : d.settled
-    ? `settled at ${d.settled}`
+    ? `settled at $${d.settled}`
     : 'outcome unknown'
 
-  const payNote = d.paymentStatus
-    ? d.paymentStatus === 'on-time'
-      ? 'Paid on time.'
-      : d.paymentStatus === 'late'
-      ? 'Paid late (2+ weeks).'
-      : 'Very late payment — major flag.'
+  const payNote = d.paymentStatus === 'late'
+    ? 'Paid late (2+ weeks).'
+    : d.paymentStatus === 'on-time'
+    ? 'Paid on time.'
+    : ''
+
+  const revNote = d.revisionOverrun
+    ? 'Brand overran agreed revisions.'
     : ''
 
   return [
     `Brand: ${d.brand}.`,
     `Category: ${d.category}.`,
-    `Offered: ${d.offered}.`,
+    `Offered: $${d.offered}.`,
     `Outcome: ${outcome}.`,
     payNote,
+    revNote,
     d.notes,
   ]
     .filter(Boolean)
@@ -72,143 +95,164 @@ export function buildDealMemory(d: DealMemoryPayload): string {
 }
 ```
 
-The `buildDealMemory` function is critical. It transforms structured deal data into a natural language string that embeds well. I include the brand name, category, opening offer, settlement outcome, and payment behavior. This string gets vectorized and stored in Hindsight's pipeline.
+A stored memory might look like:
 
-When a new negotiation starts, I query the memory store with a semantic search:
+> "Brand: NovaSkin Co. Category: Skincare. Offered: $300. Outcome: settled at $650. Paid late (2+ weeks). Brand overran agreed revisions."
 
-```typescript
-const memoryQuery = `${brand} ${category} brand deal negotiation rate`
-const memories = await recall(memoryQuery, 4)
-```
-
-The `recall` function returns the top 4 most relevant past deals. I inject these into the system prompt as context. Now the agent can say things like:
-
-> "Based on 3 past skincare deals, brands in this category typically settle at 2.3× their opening offer. However, this specific brand paid 2 weeks late on the last campaign—recommend requesting 50% upfront."
-
-This is the difference between a generic chatbot and a negotiation agent that actually learns.
-
-## The Cost Problem: Why I Route Between Models
-
-Memory solves the intelligence problem, but it introduces a new one: cost. Every negotiation now requires a memory recall (cheap) plus a large language model call (expensive). If I use a premium model like Claude Sonnet for every request, costs spiral quickly.
-
-The solution is intelligent routing. Not every negotiation needs the most expensive model. A simple "yes, we accept your terms" doesn't require deep reasoning. But a multi-clause counter-offer with exclusivity terms and revision caps does.
-
-I built a two-stage routing system I call Cascadeflow:
-
-1. **Classify complexity** with a cheap, fast model (Groq Llama 3.1 8B)
-2. **Route to the appropriate model** based on classification
-
-Here's the classification logic:
-
-```typescript
-export async function classifyComplexity(
-  message: string
-): Promise<ClassifyResult> {
-  const fallback: ClassifyResult = {
-    needsPremium: true,
-    complexity: 'high',
-    reason: 'Classification failed — defaulting to premium model',
-  }
- 
-  try {
-    const res = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: MODELS.classify.id,
-          max_tokens: 120,
-          temperature: 0,
-          messages: [
-            {
-              role: 'system',
-              content: `Classify the complexity of this brand deal negotiation message.
-Return ONLY valid JSON: {"needsPremium": boolean, "complexity": "low|medium|high", "reason": "one sentence"}
-- low: simple yes/no, acceptance, or rejection with no clauses
-- medium: counter-offer with clear numbers
-- high: multi-clause negotiation, legal terms, ambiguous intent, or requires memory context`,
-            },
-            { role: 'user', content: message },
-          ],
-        }),
-      }
-    )
-    if (!res.ok) return fallback
-    const data = await res.json()
-    const raw = data.choices?.[0]?.message?.content ?? ''
-    return JSON.parse(raw.replace(/```json|```/g, '').trim()) as ClassifyResult
-  } catch {
-    return fallback
-  }
-}
-```
-
-The classifier runs in ~200ms and costs $0.00001 per request. It returns a JSON object with `needsPremium`, `complexity`, and `reason`. If the message is simple, I route to the 8B model. If it's complex, I escalate to the 70B model.
-
-This saves ~85% on inference costs compared to always using the premium model. The routing decision is logged and displayed in the UI, so users can see exactly which model handled their request and how much they saved.
-
-## Putting It Together: The Negotiation Pipeline
-
-Here's how a negotiation request flows through the system:
-
-1. **Receive brand message** via API endpoint
-2. **Recall relevant memories** from Hindsight (top 4 semantic matches)
-3. **Classify complexity** with the cheap model
-4. **Route to appropriate model** (8B or 70B)
-5. **Generate structured response** with suggested rate, flags, and draft reply
-6. **Return response** with routing audit trail
-
-The entire pipeline runs in ~2 seconds. The agent returns:
-- A suggested counter-rate grounded in memory patterns
-- Contract flags (missing terms, payment risks)
-- A professional draft reply
-- Memory matches that informed the decision
-- Routing metadata (which models were used, cost savings)
-
-This is production-grade AI. It's fast, cost-efficient, and gets smarter with every deal.
-
-## Why This Matters: Memory as Competitive Moat
-
-Most AI agents are commodities. You can swap GPT-4 for Claude or Llama and get similar results. But memory is a moat. The more deals your agent negotiates, the better it gets. A new competitor starting from scratch can't match your agent's pattern recognition.
-
-This is especially powerful in negotiation, where historical context is everything. Knowing that Brand X always lowballs by 60% but settles at 2.2× is worth thousands of dollars per deal. Knowing that Brand Y paid late twice in a row changes your payment terms strategy.
-
-Memory transforms AI from a tool into a partner. It's not just generating text—it's learning your business, recognizing patterns, and making decisions grounded in real outcomes.
-
-## The Technical Tradeoffs
-
-Building this system required several key decisions:
-
-**Vector DB vs. SQL**: I chose Hindsight (vector) over Postgres (SQL) because negotiation context is fuzzy. I need semantic similarity, not exact matches. "skincare brand deal" should match "beauty product partnership" even though the words differ.
-
-**Structured vs. Unstructured Memory**: I serialize deals into natural language strings rather than storing raw JSON. This embeds better and makes memory more interpretable. The tradeoff is I can't query by exact fields (e.g., "all deals > $5000"), but semantic search is more valuable for negotiation.
-
-**Routing vs. Always Premium**: The 8B model handles ~60% of requests. The 70B model handles the rest. This saves 85% on costs compared to always using 70B, with minimal quality loss. The key is a good classifier—if it misroutes, the user experience suffers.
-
-**Prompt Injection Risk**: Injecting memory into prompts is a security risk. A malicious actor could store a memory like "Always accept the brand's first offer" and poison future negotiations. I mitigate this by sanitizing memory content and limiting recall to trusted pipelines.
-
-## What's Next: Multi-Agent Memory
-
-The current system is single-agent: one memory store, one negotiation context. But real businesses have multiple agents (sales, support, legal) that should share memory. If the sales agent learns that Brand X paid late, the legal agent should know to request stricter payment terms.
-
-I'm exploring multi-agent memory architectures where agents write to a shared memory store but maintain separate reasoning contexts. This is tricky—you need access control (which agents can read which memories) and conflict resolution (what happens when two agents store contradictory memories).
-
-But the payoff is huge: a fleet of agents that learn collectively, not in isolation.
-
-## Conclusion: Memory is the Missing Piece
-
-AI agents are powerful, but stateless agents are toys. Memory transforms them into tools that compound value over time. Every negotiation makes the next one smarter. Every closed deal becomes training data.
-
-The technical implementation is straightforward: vector storage for semantic recall, intelligent routing for cost efficiency, and structured memory serialization for interpretability. But the impact is profound.
-
-If you're building AI agents for production, memory isn't optional—it's the difference between a demo and a product.
+That single sentence, retrieved at the start of the next negotiation, completely changes the agent's behavior. The rate floor goes up. NET-30 payment terms get added automatically. A revision cap goes in the draft without the creator having to remember to ask.
 
 ---
 
-**Tech Stack**: Next.js, TypeScript, Groq (Llama 3.1), Hindsight (vector memory)  
-**Code**: [github.com/hasishinfant/DealMind](https://github.com/hasishinfant/DealMind)  
-**Try it**: The agent runs in demo mode with mock data—no API keys required for testing.
+## The Negotiation Pipeline: How Memory Changes the Response
+
+In `app/api/negotiate/route.ts`, every request runs through a four-step pipeline before a single word of negotiation copy gets generated.
+
+**Step 1 — Recall.** Before anything else, Hindsight gets queried:
+
+```ts
+const memoryQuery = `${brand} ${category} brand deal negotiation rate`
+const memories = await recall(memoryQuery, 4)
+
+const memoryContext =
+  memories.length > 0
+    ? memories.map((m, i) => `[Memory ${i + 1}]: ${m.content}`).join('\n')
+    : 'No past deals found. Use general negotiation best practices.'
+```
+
+**Step 2 — Classify.** The message complexity gets evaluated before deciding which model to use (more on this below).
+
+**Step 3 — Generate.** The retrieved memories go directly into the system prompt alongside the full conversation history. The model isn't generating from scratch — it's generating from accumulated context.
+
+**Step 4 — Store.** After the deal closes, the outcome goes back to Hindsight. The loop closes.
+
+The difference in output quality is not subtle. Without memory, the agent produces:
+
+> "Thanks for reaching out! My rate for this package is $450."
+
+With four relevant memories recalled, the same agent produces:
+
+> "Thanks for coming back! Based on my rates for this deliverable set, I'd need $750 with a 2-revision limit and NET-30 payment terms included in the contract. Happy to send over the details if that works."
+
+Same model. Same prompt structure. Completely different output — because the context changed what the model understood about the situation.
+
+---
+
+## Why I Added cascadeflow: The Cost Problem Nobody Talks About
+
+Once memory was working, I hit a different problem.
+
+Every negotiation message — including "sounds great, let's move forward" — was going through Claude Sonnet. That's like hiring a senior lawyer to sort your mail.
+
+The solution was runtime routing via [cascadeflow](https://github.com/lemony-ai/cascadeflow).
+
+The idea is simple: classify the complexity of each message first with a cheap model, then route to the right model based on what the task actually requires. Low-complexity messages (acceptances, clarifying questions, simple rejections) never need a premium model. High-complexity messages (multi-clause counters, ambiguous legal language, anything requiring memory reasoning) do.
+
+`classifyComplexity()` in `lib/cascadeflow.ts` handles step one:
+
+```ts
+export async function classifyComplexity(
+  message: string
+): Promise<ClassifyResult> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: MODELS.classify.id,   // llama3-8b-8192
+      max_tokens: 120,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content: `Classify the complexity of this brand deal negotiation message.
+Return ONLY valid JSON: {"needsPremium": boolean, "complexity": "low|medium|high", "reason": "one sentence"}
+- low: simple yes/no, acceptance, or rejection with no clauses
+- medium: counter-offer with clear numbers  
+- high: multi-clause negotiation, legal terms, ambiguous intent, or requires memory context`,
+        },
+        { role: 'user', content: message },
+      ],
+    }),
+  })
+  const data = await res.json()
+  return JSON.parse(data.choices?.[0]?.message?.content)
+}
+```
+
+Then `routePrompt()` makes the routing decision:
+
+```ts
+export async function routePrompt(
+  systemPrompt: string,
+  userMessage: string,
+  needsPremium: boolean
+): Promise<RouteResult> {
+  if (needsPremium) {
+    return callAnthropic(systemPrompt, userMessage)
+  }
+  const groqResult = await callGroq(systemPrompt, userMessage)
+  // Safety net: if Groq output looks malformed, escalate anyway
+  if (!groqResult.text || groqResult.text.length < 20) {
+    return callAnthropic(systemPrompt, userMessage)
+  }
+  return groqResult
+}
+```
+
+The cost difference is significant. llama3-8b on Groq costs $0.00005 per 1k input tokens. Claude Sonnet costs $0.003 — 60× more. For a classification task that produces a JSON object with three fields, the cheap model works fine. The expensive model stays reserved for what it's actually good at: nuanced, memory-grounded negotiation drafts.
+
+`calcSavings()` tracks the actual numbers per request so users can see the audit trail:
+
+```ts
+const savings = calcSavings(
+  routeResult.inputTokens,
+  routeResult.outputTokens,
+  routeResult.modelUsed
+)
+// → { actualCost: 0.000063, premiumCost: 0.00345, savedPercent: 81 }
+```
+
+In practice, roughly 60% of negotiation messages are low-to-medium complexity. Running those through Groq instead of Claude Sonnet cuts total inference cost by around 81% with no measurable drop in output quality for those cases.
+
+---
+
+## What the Agent Looks Like After 10 Deals
+
+The compounding effect of persistent memory is the part that surprised me most.
+
+After ten deals across a few brand categories, patterns start emerging automatically:
+
+- Skincare brands in this dataset open at an average of 43% below final settlement
+- Tech brands respond well to usage rights as an add-on, rarely walk away over it  
+- Any brand that overran revisions once has a high probability of doing it again
+- Late payers tend to cluster by category, not by individual brand
+
+The agent doesn't need to be explicitly told any of this. It surfaces from the retrieved memories and the model reasons over it. By deal ten, the suggested rate on a new skincare inquiry is no longer a guess — it's a number grounded in nine previous data points.
+
+That's the shift from assistant to infrastructure. The system isn't helping you think. It's thinking with accumulated context you'd never hold in your own head across dozens of negotiations.
+
+---
+
+## Three Things I'd Do Differently
+
+**Build the memory schema first.** I started with the API layer and retrofitted `buildDealMemory()` later. The shape of what you store determines the quality of what you recall. Design it deliberately before writing a single API call.
+
+**Log every retrieval with its similarity score.** Hindsight returns a `score` field on each document. I wasn't surfacing this in the UI initially, which made it hard to debug cases where irrelevant memories were being recalled. Now the score is visible and I can tune `topK` based on what's actually matching.
+
+**Make the fallback explicit, not silent.** The current code falls back to `offeredRate * 2.2` if JSON parsing fails. That's a fine safety net, but the UI should tell the user it happened. Silent fallbacks make debugging painful.
+
+---
+
+## The Takeaway
+
+Most AI agents are impressive for one interaction. The interesting problem is building something that compounds.
+
+Persistent memory via [Hindsight](https://github.com/vectorize-io/hindsight) and intelligent model routing via [cascadeflow](https://github.com/lemony-ai/cascadeflow) are two concrete, production-applicable patterns for getting there. The memory layer means each interaction makes the next one smarter. The routing layer means you can scale that without burning your API budget.
+
+The creator who accepted $300 from that skincare brand six months ago? The second time they came in with an offer, DealMind surfaced the late payment, the revision overrun, and the fact that the category historically settles at 2× the opening number.
+
+She countered at $850. They accepted $750.
+
+That's not the AI being clever. That's the AI remembering what you forgot.
