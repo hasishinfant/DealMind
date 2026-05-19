@@ -1,31 +1,124 @@
 # DealMind
 
-AI-powered negotiation agent for creators and influencers. DealMind uses intelligent memory (Hindsight) and smart model routing (Cascadeflow) to negotiate better brand deals.
+### AI negotiation intelligence for creators.
 
-## 🚀 Quick Start
+Creators lose thousands in brand deals — not because they lack talent, but because they negotiate blindly.
 
-### Demo Mode (No Setup Required)
+Brands lowball.
+Usage rights get buried.
+Payments get delayed.
+Revision requests spiral out of control.
+
+And every negotiation starts from zero.
+
+## DealMind changes that.
+
+DealMind is an AI-powered negotiation agent that remembers every brand interaction, learns negotiation patterns over time, and helps creators secure smarter, safer, and higher-paying partnerships.
+
+Instead of generic AI replies, DealMind uses persistent memory through Hindsight to recall:
+
+* past payment behavior
+* settlement trends
+* revision abuse
+* creator preferences
+* category negotiation patterns
+
+By the fifth negotiation, the agent no longer responds like a chatbot — it negotiates like a manager that knows your history.
+
+Using cascadeflow runtime intelligence, DealMind routes tasks through optimized AI pipelines:
+
+* fast models for classification
+* stronger models for negotiation drafting
+* fallback layers for cost protection
+
+## Result
+
+* smarter negotiations
+* lower AI costs
+* faster responses
+* persistent strategic memory
+
+---
+
+# Example
+
+### Without memory
+
+> “Thanks! My rate is $450.”
+
+### With DealMind
+
+> “Based on previous campaigns, we’d require NET-30 payment terms and a strict 2-revision cap. My standard rate for this package is $750 including limited usage rights.”
+
+DealMind transforms AI from:
+
+> reactive assistant
+
+into:
+
+> persistent negotiation intelligence.
+
+Built for the modern creator economy.
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* Next.js 15
+* TypeScript
+* Tailwind CSS
+* shadcn/ui
+* Framer Motion
+
+## AI Infrastructure
+
+* Groq API
+* Hindsight Memory
+* cascadeflow Runtime Intelligence
+
+## Models
+
+* llama-3.1-8b-instant
+* llama-3.3-70b-versatile
+
+## Features
+
+* Persistent negotiation memory
+* Brand risk intelligence
+* AI-powered counter offers
+* Runtime model routing
+* Negotiation analytics
+* Creator preference learning
+* Cost optimization layer
+* Memory evolution engine
+
+---
+
+# Environment Variables
+
+```env
+NODE_ENV=development
+PORT=3001
+
+# Groq
+GROQ_API_KEY=your_groq_api_key
+
+# Hindsight
+HINDSIGHT_API_KEY=your_hindsight_api_key
+HINDSIGHT_PIPELINE_ID=your_pipeline_id
+
+# Runtime
+NEXT_PUBLIC_APP_NAME=DealMind
+```
+
+---
+
+# Architecture
+
 
 ```bash
-cd dealmind
-npm install
-npm run dev
-```
-
-Visit `http://localhost:3001` and click "Continue with Instagram" to access the demo.
-
-### Features
-
-- 🤖 **AI Negotiation**: Smart reply generation for brand deals
-- 🧠 **Memory System**: Learns from past negotiations (Hindsight)
-- ⚡ **Smart Routing**: Cost-optimized model selection (Cascadeflow)
-- 📊 **Analytics**: Track deals, engagement, and performance
-- 🎨 **Premium UI**: Modern dark mode interface
-- 🔐 **Instagram OAuth**: Secure authentication
-
-## 📋 Project Structure
-
-```
 dealmind/
 ├── app/
 │   ├── api/
@@ -36,213 +129,43 @@ dealmind/
 │   ├── data/                     # Mock data
 │   ├── login/                    # Login page
 │   └── page.tsx                  # Main app
+│
 ├── lib/
-│   ├── cascadeflow.ts           # Model routing logic
-│   ├── hindsight.ts             # Memory integration
-│   └── utils.ts                 # Utilities
-└── types/index.ts               # TypeScript types
+│   ├── cascadeflow.ts            # Model routing logic
+│   ├── hindsight.ts              # Memory integration
+│   └── utils.ts                  # Utilities
+│
+└── types/
+    └── index.ts                  # TypeScript types
 ```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Copy `.env.local` and update:
-
-```bash
-# Required
-GROQ_API_KEY=your_groq_api_key
-
-# Optional (for production)
-INSTAGRAM_CLIENT_ID=your_instagram_client_id
-INSTAGRAM_CLIENT_SECRET=your_instagram_client_secret
-HINDSIGHT_API_KEY=your_hindsight_api_key
-HINDSIGHT_PIPELINE_ID=your_pipeline_id
-```
-
-### Instagram OAuth Setup
-
-See [INSTAGRAM_OAUTH_SETUP.md](./INSTAGRAM_OAUTH_SETUP.md) for detailed instructions.
-
-## 🎯 How It Works
-
-### 1. Authentication
-
-- Login with Instagram (or use demo mode)
-- Secure session management with cookies
-
-### 2. Deal Pipeline
-
-- View active brand negotiations
-- Track deal stages and status
-- Monitor engagement metrics
-
-### 3. AI Negotiation
-
-- Select a deal from the pipeline
-- Click "Generate Reply" for AI-powered responses
-- Edit and send negotiation messages
-- AI learns from conversation history
-
-### 4. Smart Routing (Cascadeflow)
-
-- Classifies message complexity with Groq 8B
-- Routes to appropriate model (8B or 70B)
-- Tracks cost savings vs. premium models
-- Displays routing decisions in UI
-
-### 5. Memory System (Hindsight)
-
-- Stores negotiation history
-- Recalls relevant past deals
-- Provides strategic context
-- Improves over time
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
-- **AI Models**: Groq (Llama 3.1)
-- **Memory**: Hindsight API
-- **Auth**: Instagram OAuth 2.0
-
-## 📊 Model Routing
-
-| Model | Use Case | Cost (per 1K tokens) |
-|-------|----------|---------------------|
-| Groq 8B | Classification, Simple replies | $0.00005-0.00008 |
-| Groq 70B | Complex negotiations | $0.00059-0.00079 |
-
-Average savings: **~95%** vs. premium models
-
-## 🎨 UI Features
-
-- **4-Column Layout**: Profile, Pipeline, Thread, Intelligence
-- **Glassmorphism**: Premium dark mode design
-- **Smooth Animations**: Framer Motion transitions
-- **Real-time Updates**: Live negotiation thread
-- **Instagram Preview**: Content grid with real thumbnails
-- **Analytics Dashboard**: Deal metrics and insights
-
-## 🔐 Security
-
-- HTTP-only cookies for sessions
-- Secure OAuth 2.0 flow
-- Environment variable protection
-- HTTPS in production
-- Rate limiting ready
-
-## 📱 Pages
-
-### `/login`
-
-- Instagram OAuth login
-- Demo mode fallback
-- Premium branding
-
-### `/` (Main App)
-
-- Creator profile with stats
-- Instagram content preview
-- Deal pipeline management
-- AI negotiation interface
-- Memory insights panel
-- Activity feed
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-```bash
-vercel deploy
-```
-
-### Environment Variables (Production)
-
-Set in Vercel dashboard:
-
-- `GROQ_API_KEY`
-- `INSTAGRAM_CLIENT_ID`
-- `INSTAGRAM_CLIENT_SECRET`
-- `NEXT_PUBLIC_INSTAGRAM_CLIENT_ID`
-- `NEXT_PUBLIC_APP_URL`
-- `HINDSIGHT_API_KEY`
-- `HINDSIGHT_PIPELINE_ID`
-
-## 📝 API Endpoints
-
-### `POST /api/negotiate`
-
-Generate AI negotiation response
-
-```json
-{
-  "brand": "Nova Skin",
-  "category": "Skincare",
-  "offeredRate": 300,
-  "conversationHistory": [...],
-  "latestMessage": "..."
-}
-```
-
-### `POST /api/memory/write`
-
-Store negotiation memory
-
-```json
-{
-  "dealId": "nova-skin",
-  "content": "...",
-  "metadata": {...}
-}
-```
-
-### `POST /api/memory/read`
-
-Query negotiation history
-
-```json
-{
-  "query": "skincare brand negotiations",
-  "limit": 5
-}
-```
-
-## 🧪 Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-## 📚 Documentation
-
-- [Instagram OAuth Setup](./INSTAGRAM_OAUTH_SETUP.md)
-- [Changelog](./CHANGELOG.md)
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- **Groq**: Fast AI inference
-- **Hindsight**: Memory infrastructure
-- **Instagram**: Creator authentication
-- **Vercel**: Hosting platform
 
 ---
 
-Built with ❤️ for creators by the DealMind team
+# Core Workflow
+
+1. Brand sends partnership DM
+2. DealMind analyzes negotiation leverage
+3. Hindsight recalls previous brand behavior
+4. cascadeflow routes request through optimized AI layers
+5. AI drafts strategic negotiation response
+6. Negotiation outcome gets stored into persistent memory
+7. Future negotiations become smarter automatically
+
+---
+
+# Why DealMind
+
+Most creator tools help manage content.
+
+DealMind helps creators protect leverage.
+
+It remembers:
+
+* who paid late
+* who lowballs
+* who abuses revisions
+* which categories negotiate fairly
+* how creators prefer to negotiate
+
+Because creators should negotiate with intelligence — not guesswork.
+
